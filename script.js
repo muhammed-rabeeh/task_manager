@@ -1,14 +1,38 @@
 let tasks = [];
 let completedTasks = [];
 let currentUser = null;
+let timeUtilized = 0;
+const dayStartTime = 6 * 60 * 60 * 1000; // 6:00 AM in milliseconds
+const sixteenHours = 16 * 60 * 60 * 1000; // 16 hours in milliseconds
+
+// Get current day start time (06:00:00 AM)
+function getCurrentDayStartTime() {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6, 0, 0);
+    return startOfDay.getTime();
+}
+
+// Load or initialize time left in the day
+function initializeDayTimer() {
+    const now = Date.now();
+    const dayStart = getCurrentDayStartTime();
+    const timeElapsedSinceDayStart = now - dayStart;
+    const timeLeftInMillis = Math.max(sixteenHours - timeElapsedSinceDayStart, 0);
+
+    localStorage.setItem("timeLeftInMillis", timeLeftInMillis);
+    return timeLeftInMillis;
+}
 
 function signIn() {
     const username = document.getElementById("username").value.trim();
     if (username) {
         currentUser = username;
         loadTasks();
+        loadTimeUtilized();
         document.getElementById("signin-container").style.display = "none";
         document.getElementById("task-container").style.display = "block";
+        startClock();
+        startDayTimer();
     }
 }
 
@@ -32,17 +56,18 @@ function renderTasks() {
     taskList.innerHTML = "";
     tasks.forEach((task, index) => {
         const taskItem = document.createElement("li");
-        
+
         const taskName = document.createElement("span");
         taskName.className = `task-name ${task.done ? 'done-task' : ''}`;
         taskName.textContent = task.name;
-        
+
         const addStepButton = document.createElement("button");
         addStepButton.textContent = "Add Steps";
         addStepButton.onclick = () => addStep(index);
 
         const removeTaskButton = document.createElement("button");
         removeTaskButton.textContent = "Remove Task";
+        removeTaskButton.className = "remove-task";
         removeTaskButton.onclick = () => removeTask(index);
 
         const markDoneButton = document.createElement("button");
@@ -51,23 +76,27 @@ function renderTasks() {
 
         const stepsContainer = document.createElement("div");
         stepsContainer.className = "steps";
+
         task.steps.forEach((step, stepIndex) => {
             const stepDiv = document.createElement("div");
             stepDiv.className = "step";
-            
+
             const stepName = document.createElement("span");
-            stepName.className = `${step.done ? 'done-task' : ''}`;
             stepName.textContent = step.name;
-            
+            stepName.className = `${step.done ? 'done-task' : ''}`;
+
             const timer = document.createElement("span");
+            timer.className = "timer-box";
             timer.textContent = formatTime(step.time);
-            
+
             const startButton = document.createElement("button");
             startButton.textContent = "Start Timer";
+            startButton.className = "start-timer";
             startButton.onclick = () => startTimer(index, stepIndex, timer);
-            
+
             const stopButton = document.createElement("button");
             stopButton.textContent = "Stop Timer";
+            stopButton.className = "stop-timer";
             stopButton.onclick = () => stopTimer(index, stepIndex);
 
             const removeStepButton = document.createElement("button");
@@ -84,7 +113,7 @@ function renderTasks() {
             stepDiv.appendChild(stopButton);
             stepDiv.appendChild(removeStepButton);
             stepDiv.appendChild(markStepDoneButton);
-            
+
             stepsContainer.appendChild(stepDiv);
         });
 
@@ -151,13 +180,13 @@ function markTaskDone(taskIndex) {
     tasks[taskIndex].steps.forEach(step => step.done = true);
     completedTasks.push(tasks[taskIndex]);
     renderTasks();
-    updateSummary();
+    updatePopupTable();
 }
 
 function markStepDone(taskIndex, stepIndex) {
     tasks[taskIndex].steps[stepIndex].done = true;
     renderTasks();
-    updateSummary();
+    updatePopupTable();
 }
 
 function selectRandomTask() {
@@ -173,6 +202,24 @@ function selectRandomTask() {
 function saveTasks() {
     if (currentUser) {
         localStorage.setItem(currentUser, JSON.stringify(tasks));
+
+        // Calculate time utilized
+        timeUtilized = tasks.reduce((total, task) => {
+            return total + task.steps.reduce((stepTotal, step) => {
+                return stepTotal + step.time;
+            }, 0);
+        }, 0);
+
+        // Save and display time utilized
+        localStorage.setItem("timeUtilized", timeUtilized);
+
+        const utilizedSeconds = timeUtilized;
+        const utilizedHours = Math.floor(utilizedSeconds / 3600);
+        const utilizedMinutes = Math.floor((utilizedSeconds % 3600) / 60);
+        const utilizedSecondsDisplay = Math.floor(utilizedSeconds % 60);
+
+        document.getElementById("time-utilized-box").textContent = `Time Utilized: ${utilizedHours}h ${utilizedMinutes}m ${utilizedSecondsDisplay}s`;
+
         alert("Tasks saved successfully.");
     }
 }
@@ -187,10 +234,19 @@ function loadTasks() {
     }
 }
 
-function updateSummary() {
-    const summary = document.getElementById("summary");
-    summary.textContent = `Total Tasks: ${tasks.length}, Completed Tasks: ${completedTasks.length}`;
-    updatePopupTable();
+function loadTimeUtilized() {
+    timeUtilized = parseInt(localStorage.getItem("timeUtilized")) || 0;
+
+    if (timeUtilized === 0) {
+        document.getElementById("time-utilized-box").textContent = "Time Utilized: Not started yet";
+    } else {
+        const utilizedSeconds = timeUtilized;
+        const utilizedHours = Math.floor(utilizedSeconds / 3600);
+        const utilizedMinutes = Math.floor((utilizedSeconds % 3600) / 60);
+        const utilizedSecondsDisplay = Math.floor(utilizedSeconds % 60);
+
+        document.getElementById("time-utilized-box").textContent = `Time Utilized: ${utilizedHours}h ${utilizedMinutes}m ${utilizedSecondsDisplay}s`;
+    }
 }
 
 function updatePopupTable() {
@@ -204,25 +260,87 @@ function updatePopupTable() {
             taskCell.textContent = task.name;
             const stepCell = document.createElement("td");
             stepCell.textContent = step.name;
-            const durationCell = document.createElement("td");
-            durationCell.textContent = formatTime(step.time);
-
+            const timeCell = document.createElement("td");
+            timeCell.textContent = formatTime(step.time);
             row.appendChild(taskCell);
             row.appendChild(stepCell);
-            row.appendChild(durationCell);
-
+            row.appendChild(timeCell);
             dataTableBody.appendChild(row);
         });
     });
+
+    document.getElementById("total-tasks").textContent = `Total Tasks: ${tasks.length}`;
+    document.getElementById("completed-tasks").textContent = `Tasks Completed: ${completedTasks.length}`;
 }
 
-function showData() {
-    updateSummary();
-    const popup = document.getElementById("popup-table");
-    popup.style.display = "flex";
+function startClock() {
+    setInterval(() => {
+        const now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        let seconds = now.getSeconds();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // the hour '0' should be '12'
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        const strTime = `${hours}:${minutes}:${seconds} ${ampm}`;
+        document.getElementById("current-time").textContent = strTime;
+    }, 1000);
 }
 
-function hideData() {
-    const popup = document.getElementById("popup-table");
-    popup.style.display = "none";
+function startDayTimer() {
+    const timeLeftInMillis = initializeDayTimer();
+    let timeLeft = timeLeftInMillis / 1000;
+
+    const dayTimerInterval = setInterval(() => {
+        timeLeft--;
+        const hoursLeft = Math.floor(timeLeft / 3600);
+        const minutesLeft = Math.floor((timeLeft % 3600) / 60);
+        const secondsLeft = Math.floor(timeLeft % 60);
+
+        document
+            .getElementById("time-left-box").textContent = `Time Left: ${hoursLeft}h ${minutesLeft}m ${secondsLeft}s`;
+
+        if (timeLeft <= 0) {
+            clearInterval(dayTimerInterval);
+            displayDaySummary();
+        }
+    }, 1000);
+}
+
+function displayDaySummary() {
+    const summaryBox = document.getElementById("summary-box");
+
+    // Prepare the summary content
+    const utilizedHours = Math.floor(timeUtilized / 3600);
+    const utilizedMinutes = Math.floor((timeUtilized % 3600) / 60);
+    const utilizedSeconds = timeUtilized % 60;
+
+    let summaryContent = `<strong>Day Summary:</strong><br>`;
+    summaryContent += `Total Time Utilized: ${utilizedHours}h ${utilizedMinutes}m ${utilizedSeconds}s<br>`;
+
+    completedTasks.forEach(task => {
+        summaryContent += `<br><strong>${task.name}:</strong><br>`;
+        task.steps.forEach(step => {
+            summaryContent += `${step.name} - ${formatTime(step.time)}<br>`;
+        });
+    });
+
+    // Display the summary content in the box
+    summaryBox.innerHTML = summaryContent;
+    summaryBox.style.display = "block";
+}
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('Service Worker registration failed:', error);
+            });
+    });
 }
