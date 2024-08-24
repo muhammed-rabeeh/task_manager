@@ -5,6 +5,7 @@ let timeUtilized = 0;
 const dayStartTime = 6 * 60 * 60 * 1000; // 6:00 AM in milliseconds
 const sixteenHours = 16 * 60 * 60 * 1000; // 16 hours in milliseconds
 
+
 function signIn() {
     const username = document.getElementById("username").value.trim();
     if (username) {
