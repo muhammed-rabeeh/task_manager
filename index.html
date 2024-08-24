@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Productivity Task Manager</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="styles.css">
-
 </head>
 <body>
+    <div id="current-user"></div>
     <div id="signin-container" class="signin-container">
         <h2>Sign In</h2>
         <input type="text" id="username" placeholder="Enter your username">
@@ -16,6 +16,7 @@
     </div>
 
     <div id="task-container" class="container" style="display: none;">
+        <button id="signout-button" onclick="signOut()">Sign Out</button>
         <div class="time-display">
             <p id="current-time"></p>
             <div class="time-box" id="time-left-box"></div>
