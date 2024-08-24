@@ -5,22 +5,110 @@ let timeUtilized = 0;
 const dayStartTime = 6 * 60 * 60 * 1000; // 6:00 AM in milliseconds
 const sixteenHours = 16 * 60 * 60 * 1000; // 16 hours in milliseconds
 
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+function initializeApp() {
+    currentUser = localStorage.getItem("currentUser");
+    if (currentUser) {
+        loadUserData();
+        showTaskContainer();
+    } else {
+        showSignInContainer();
+    }
+}
+
+function showData() {
+    const popup = document.getElementById("popup-table");
+    popup.style.display = "flex";
+    updatePopupTable(); 
+}
+
+function hideData() {
+    const popup = document.getElementById("popup-table");
+    popup.style.display = "none";
+}
+
+
+function showTaskContainer() {
+    document.getElementById("signin-container").style.display = "none";
+    document.getElementById("task-container").style.display = "block";
+    document.getElementById("current-user").textContent = `Logged in as: ${currentUser}`;
+    loadTasks();
+    loadTimeUtilized();
+    startClock();
+    startDayTimer();
+}
+
+function showSignInContainer() {
+    document.getElementById("signin-container").style.display = "block";
+    document.getElementById("task-container").style.display = "none";
+}
 
 function signIn() {
     const username = document.getElementById("username").value.trim();
     if (username) {
         localStorage.setItem("currentUser", username);
         currentUser = username;
-        loadTasks();
-        loadTimeUtilized();
-        document.getElementById("signin-container").style.display = "none";
-        document.getElementById("task-container").style.display = "block";
-        startClock();
-        startDayTimer();
+        loadUserData();
+        showTaskContainer();
     }
 }
 
+function loadUserData() {
+    loadTasks();
+    loadTimeUtilized();
+    loadCompletedTasks();
+}
 
+function loadCompletedTasks() {
+    const savedCompletedTasks = localStorage.getItem(`completedTasks_${currentUser}`);
+    if (savedCompletedTasks) {
+        completedTasks = JSON.parse(savedCompletedTasks);
+    }
+}
+
+function signOut() {
+    currentUser = null;
+    tasks = [];
+    completedTasks = [];
+    timeUtilized = 0;
+    showSignInContainer();
+    document.getElementById("username").value = "";
+    document.getElementById("task-list").innerHTML = "";
+    document.getElementById("random-task-display").textContent = "";
+    document.getElementById("current-user").textContent="";
+    updateTimeUtilizedDisplay();
+    localStorage.removeItem("currentUser");
+}
+
+
+function loadTasks() {
+    const savedTasks = localStorage.getItem(`tasks_${currentUser}`);
+    if (savedTasks) {
+        tasks = JSON.parse(savedTasks);
+        renderTasks();
+    }
+}
+
+function saveTasks() {
+    localStorage.setItem(`tasks_${currentUser}`, JSON.stringify(tasks));
+    localStorage.setItem(`timeUtilized_${currentUser}`, timeUtilized.toString());
+    updateTimeUtilizedDisplay();
+    alert("Tasks and time utilized saved successfully.");
+}
+
+
+function updateTimeUtilizedDisplay() {
+    const utilizedHours = Math.floor(timeUtilized / 3600);
+    const utilizedMinutes = Math.floor((timeUtilized % 3600) / 60);
+    const utilizedSeconds = timeUtilized % 60;
+    document.getElementById("time-utilized-box").textContent = 
+        `Time Utilized: ${utilizedHours}h ${utilizedMinutes}m ${utilizedSeconds}s`;
+}
+
+function saveTimeUtilized() {
+    localStorage.setItem(`timeUtilized_${currentUser}`, timeUtilized.toString());
+}
 // Get current day start time (06:00:00 AM)
 function getCurrentDayStartTime() {
     const now = new Date();
@@ -37,19 +125,6 @@ function initializeDayTimer() {
 
     localStorage.setItem("timeLeftInMillis", timeLeftInMillis);
     return timeLeftInMillis;
-}
-
-function signIn() {
-    const username = document.getElementById("username").value.trim();
-    if (username) {
-        currentUser = username;
-        loadTasks();
-        loadTimeUtilized();
-        document.getElementById("signin-container").style.display = "none";
-        document.getElementById("task-container").style.display = "block";
-        startClock();
-        startDayTimer();
-    }
 }
 
 
@@ -164,7 +239,9 @@ function startTimer(taskIndex, stepIndex, timerElement) {
     if (!step.timer) {
         step.timer = setInterval(() => {
             step.time++;
+            timeUtilized++;
             timerElement.textContent = formatTime(step.time);
+            updateTimeUtilizedDisplay();
         }, 1000);
     }
 }
@@ -174,6 +251,7 @@ function stopTimer(taskIndex, stepIndex) {
     if (step.timer) {
         clearInterval(step.timer);
         step.timer = null;
+        saveTasks();
     }
 }
 
@@ -193,12 +271,19 @@ function removeStep(taskIndex, stepIndex) {
     renderTasks();
 }
 
+
 function markTaskDone(taskIndex) {
     tasks[taskIndex].done = true;
     tasks[taskIndex].steps.forEach(step => step.done = true);
     completedTasks.push(tasks[taskIndex]);
+    // tasks.splice(taskIndex, 1);
     renderTasks();
     updatePopupTable();
+    saveCompletedTasks();
+}
+
+function saveCompletedTasks() {
+    localStorage.setItem(`completedTasks_${currentUser}`, JSON.stringify(completedTasks));
 }
 
 function markStepDone(taskIndex, stepIndex) {
@@ -217,54 +302,17 @@ function selectRandomTask() {
     }
 }
 
-function saveTasks() {
-    if (currentUser) {
-        localStorage.setItem(currentUser, JSON.stringify(tasks));
-
-        // Calculate time utilized
-        timeUtilized = tasks.reduce((total, task) => {
-            return total + task.steps.reduce((stepTotal, step) => {
-                return stepTotal + step.time;
-            }, 0);
-        }, 0);
-
-        // Save and display time utilized
-        localStorage.setItem("timeUtilized", timeUtilized);
-
-        const utilizedSeconds = timeUtilized;
-        const utilizedHours = Math.floor(utilizedSeconds / 3600);
-        const utilizedMinutes = Math.floor((utilizedSeconds % 3600) / 60);
-        const utilizedSecondsDisplay = Math.floor(utilizedSeconds % 60);
-
-        document.getElementById("time-utilized-box").textContent = `Time Utilized: ${utilizedHours}h ${utilizedMinutes}m ${utilizedSecondsDisplay}s`;
-
-        alert("Tasks saved successfully.");
-    }
-}
-
-function loadTasks() {
-    if (currentUser) {
-        const savedTasks = localStorage.getItem(currentUser);
-        if (savedTasks) {
-            tasks = JSON.parse(savedTasks);
-            renderTasks();
-        }
-    }
-}
 
 function loadTimeUtilized() {
-    timeUtilized = parseInt(localStorage.getItem("timeUtilized")) || 0;
-
-    if (timeUtilized === 0) {
-        document.getElementById("time-utilized-box").textContent = "Time Utilized: Not started yet";
-    } else {
-        const utilizedSeconds = timeUtilized;
-        const utilizedHours = Math.floor(utilizedSeconds / 3600);
-        const utilizedMinutes = Math.floor((utilizedSeconds % 3600) / 60);
-        const utilizedSecondsDisplay = Math.floor(utilizedSeconds % 60);
-
-        document.getElementById("time-utilized-box").textContent = `Time Utilized: ${utilizedHours}h ${utilizedMinutes}m ${utilizedSecondsDisplay}s`;
-    }
+    timeUtilized = parseInt(localStorage.getItem(`timeUtilized_${currentUser}`)) || 0;
+    updateTimeUtilizedDisplay();
+}
+function updateTimeUtilizedDisplay() {
+    const utilizedHours = Math.floor(timeUtilized / 3600);
+    const utilizedMinutes = Math.floor((timeUtilized % 3600) / 60);
+    const utilizedSeconds = timeUtilized % 60;
+    document.getElementById("time-utilized-box").textContent = 
+        `Time Utilized: ${utilizedHours}h ${utilizedMinutes}m ${utilizedSeconds}s`;
 }
 
 function updatePopupTable() {
