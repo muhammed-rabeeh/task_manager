@@ -2,7 +2,7 @@
     "name": "Productivity Task Manager",
     "short_name": "Task Manager",
     "description": "A productivity task manager to help you track and complete tasks efficiently.",
-    "start_url": "./",
+    "start_url": "/task_manager/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#000000",
