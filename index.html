@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Productivity Task Manager</title>
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,6 +15,12 @@
     </div>
 
     <div id="task-container" class="container" style="display: none;">
+        <div class="time-display">
+            <p id="current-time"></p>
+            <div class="time-box" id="time-left-box"></div>
+            <div class="time-box" id="time-utilized-box"></div>
+        </div>
+
         <h1>Productivity Task Manager</h1>
 
         <div class="input-container">
