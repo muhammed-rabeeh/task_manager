@@ -137,13 +137,13 @@ li .task-name {
 }
 
 .popup-content {
-    background: white;
+    background-color: #fff;
     padding: 20px;
     border-radius: 5px;
-    width: 90%;
-    max-width: 600px;
-    position: relative;
+    width: 80%;
+    max-width: 500px;
 }
+
 
 .popup-content .close {
     position: absolute;
@@ -244,4 +244,23 @@ button.stop-timer {
 button.remove-task {
     background-color: #eb9b34;
     color: white;
+}
+
+#signout-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background-color: #dc3545;
+    color: white;
+}
+
+#signout-button:hover {
+    background-color: #c82333;
+}
+
+#current-user {
+    position: fixed;
+    top: 80px;
+    left: 10px;
+    font-weight: bold;
 }
