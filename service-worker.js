@@ -1,12 +1,12 @@
 const CACHE_NAME = 'pwa-cache-v1';
 const URLS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/styles.css',
-    '/script.js',
-    '/manifest.json',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png'
+    '/task_manager/', // Adjust if this is the subdirectory
+    '/task_manager/index.html', // Adjust if this is the subdirectory
+    '/task_manager/styles.css', // Adjust if this is the subdirectory
+    '/task_manager/script.js', // Adjust if this is the subdirectory
+    '/task_manager/manifest.json', // Adjust if this is the subdirectory
+    '/task_manager/icons/icon-192x192.png',
+    '/task_manager/icons/icon-512x512.png'
 ];
 
 // Install event
