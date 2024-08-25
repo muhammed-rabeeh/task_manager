@@ -32,11 +32,13 @@ function hideData() {
 function showTaskContainer() {
     document.getElementById("signin-container").style.display = "none";
     document.getElementById("task-container").style.display = "block";
+    document.getElementById("random-task-display").style.display="none";
     document.getElementById("current-user").textContent = `Logged in as: ${currentUser}`;
     loadTasks();
     loadTimeUtilized();
     startClock();
     startDayTimer();
+    resetDaySummary();
 }
 
 function showSignInContainer() {
@@ -122,6 +124,8 @@ function initializeDayTimer() {
     const dayStart = getCurrentDayStartTime();
     const timeElapsedSinceDayStart = now - dayStart;
     const timeLeftInMillis = Math.max(sixteenHours - timeElapsedSinceDayStart, 0);
+
+    resetDaySummary();
 
     localStorage.setItem("timeLeftInMillis", timeLeftInMillis);
     return timeLeftInMillis;
@@ -276,7 +280,6 @@ function markTaskDone(taskIndex) {
     tasks[taskIndex].done = true;
     tasks[taskIndex].steps.forEach(step => step.done = true);
     completedTasks.push(tasks[taskIndex]);
-    // tasks.splice(taskIndex, 1);
     renderTasks();
     updatePopupTable();
     saveCompletedTasks();
@@ -294,6 +297,7 @@ function markStepDone(taskIndex, stepIndex) {
 
 function selectRandomTask() {
     if (tasks.length > 0) {
+        document.getElementById("random-task-display").style.display="block";
         const randomIndex = Math.floor(Math.random() * tasks.length);
         const randomTask = tasks[randomIndex];
         document.getElementById("random-task-display").textContent = `Selected Task: ${randomTask.name}`;
@@ -371,11 +375,13 @@ function startDayTimer() {
         if (timeLeft <= 0) {
             clearInterval(dayTimerInterval);
             displayDaySummary();
+            resetTimeUtilizedAndTimeLeft();
         }
     }, 1000);
 }
 
 function displayDaySummary() {
+
     const summaryBox = document.getElementById("summary-box");
 
     // Prepare the summary content
@@ -396,6 +402,22 @@ function displayDaySummary() {
     // Display the summary content in the box
     summaryBox.innerHTML = summaryContent;
     summaryBox.style.display = "block";
+}
+
+function resetDaySummary() {
+    completedTasks = [];
+    saveCompletedTasks();
+    let summaryContent = `<strong>Day Summary:</strong><br>`;
+    summaryContent += `Total Time Utilized: 0h 0m 0s<br>`;
+    document.getElementById("summary-box").innerHTML = summaryContent;
+}
+
+function resetTimeUtilizedAndTimeLeft() {
+    timeUtilized = 0;
+    localStorage.setItem(`timeUtilized_${currentUser}`, timeUtilized.toString());
+    updateTimeUtilizedDisplay();
+    document.getElementById("time-utilized-box").textContent = "Time Utilized: 0h 0m 0s";
+    document.getElementById("time-left-box").textContent = "Time Left: 0h 0m 0s";
 }
 
 // Register Service Worker
