@@ -116,12 +116,13 @@ li .task-name {
 }
 
 .random-task-display {
+    display: none;
     text-align: center;
-    margin-top:  asdfgh20px;
     padding: 10px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
+    background-color: #e0e417;
+    border-radius: 10px;
     font-weight: bold;
+    color: black;
 }
 
 .popup {
@@ -201,6 +202,42 @@ th {
 .signin-container button:hover {
     background-color: #218838;
 }
+
+
+.summary-box {
+    background-color: #f8f9fa;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.summary-box h2 {
+    margin: 0 0 10px 0;
+}
+
+.summary-box p {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.summary-box button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-top: 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    background-color: mediumseagreen;
+    color: white;
+}
+
+.summary-box button:hover {
+    opacity: 0.9;
+}
+
 
 .time-display {
     display: flex;
