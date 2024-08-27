@@ -61,7 +61,7 @@ li {
     flex-direction: column;
 }
 
-li .task-name {
+li .task-name{
     font-weight: bold;
     margin-bottom: 10px;
 }
@@ -300,4 +300,94 @@ button.remove-task {
     top: 80px;
     left: 10px;
     font-weight: bold;
+}
+
+
+/* Daily Routine Task Styles */
+
+#daily-routine-container {
+    margin-top: 20px;
+}
+
+.daily-routine-item {
+    background: #f9f9f9;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.daily-routine-item .day-name {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.daily-routine-item button {
+    padding: 5px 10px;
+    font-size: 14px;
+    margin: 5px 0;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    background-color: mediumseagreen;
+    color: white;
+}
+
+.daily-routine-item button:hover {
+    opacity: 0.9;
+}
+
+.daily-routine-item .routines {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+
+.daily-routine-item .routine {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.daily-routine-item .routine span {
+    font-weight: normal;
+    margin-right: 10px;
+}
+
+.daily-routine-item .routine input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.done-routine {
+    text-decoration: line-through;
+    color: grey;
+}
+
+.routine-tracker {
+    margin-top: 20px;
+    padding: 10px;
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+
+.routine-tracker h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.routine-tracker ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.routine-tracker li {
+    background: #ffffff;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    color: #333;
 }
