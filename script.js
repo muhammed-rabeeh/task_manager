@@ -1,6 +1,9 @@
 let tasks = [];
 let completedTasks = [];
 let currentUser = null;
+let dailyRoutines = [];
+const routineTrackerKey = 'routineTracker';
+let completedRoutines = []; 
 let timeUtilized = 0;
 const dayStartTime = 6 * 60 * 60 * 1000; // 6:00 AM in milliseconds
 const sixteenHours = 16 * 60 * 60 * 1000; // 16 hours in milliseconds
@@ -12,8 +15,15 @@ function initializeApp() {
     if (currentUser) {
         loadUserData();
         showTaskContainer();
+        loadRoutineTracker();
     } else {
         showSignInContainer();
+    }
+
+    // Initialize completedRoutines if it doesn't exist in localStorage
+    if (!localStorage.getItem(routineTrackerKey)) {
+        completedRoutines = [];
+        saveRoutineTracker();
     }
 }
 
@@ -32,6 +42,7 @@ function hideData() {
 function showTaskContainer() {
     document.getElementById("signin-container").style.display = "none";
     document.getElementById("task-container").style.display = "block";
+    document.getElementById("daily-routine-container").style.display = "block";
     document.getElementById("random-task-display").style.display="none";
     document.getElementById("current-user").textContent = `Logged in as: ${currentUser}`;
     loadTasks();
@@ -40,6 +51,173 @@ function showTaskContainer() {
     startDayTimer();
     resetDaySummary();
 }
+
+function addDailyRoutine() {
+    const dayName = document.getElementById("daily-routine-day").value.trim();
+    if (dayName) {
+        const routine = {
+            day: dayName,
+            routines: [],
+            done: false
+        };
+        dailyRoutines.push(routine);
+        renderDailyRoutines();
+        document.getElementById("daily-routine-day").value = "";
+        saveRoutineTracker();
+    }
+}
+
+function renderDailyRoutines() {
+    const dailyRoutineList = document.getElementById("daily-routine-list");
+    dailyRoutineList.innerHTML = "";
+    dailyRoutines.forEach((routine, index) => {
+        const routineItem = document.createElement("div");
+        routineItem.className = "daily-routine-item";
+
+        const dayName = document.createElement("span");
+        dayName.className = `day-name ${routine.done ? 'done-routine' : ''}`;
+        dayName.textContent = routine.day;
+
+        const addRoutineButton = document.createElement("button");
+        addRoutineButton.textContent = "Add Routine";
+        addRoutineButton.onclick = () => addRoutine(index);
+
+        const markDoneButton = document.createElement("button");
+        markDoneButton.textContent = "Done";
+        markDoneButton.onclick = () => markDailyRoutineDone(index);
+
+        const refreshButton = document.createElement("button");
+        refreshButton.textContent = "Refresh";
+        refreshButton.style.backgroundColor="black";
+        refreshButton.onclick = () => refreshRoutine(index);
+
+        const routinesContainer = document.createElement("div");
+        routinesContainer.className = "routines";
+
+        routine.routines.forEach((r, rIndex) => {
+            const routineDiv = document.createElement("div");
+            routineDiv.className = "routine";
+
+            const routineName = document.createElement("span");
+            routineName.textContent = r.name;
+            routineName.className = `${r.done ? 'done-routine' : ''}`;
+
+            const markCompleteCheckbox = document.createElement("input");
+            markCompleteCheckbox.type = "checkbox";
+            markCompleteCheckbox.checked = r.done;
+            markCompleteCheckbox.onchange = () => markRoutineDone(index, rIndex);
+
+            routineDiv.appendChild(routineName);
+            routineDiv.appendChild(markCompleteCheckbox);
+
+            routinesContainer.appendChild(routineDiv);
+        });
+
+        routineItem.appendChild(dayName);
+        routineItem.appendChild(addRoutineButton);
+        routineItem.appendChild(markDoneButton);
+        routineItem.appendChild(refreshButton);
+        routineItem.appendChild(routinesContainer);
+
+        dailyRoutineList.appendChild(routineItem);
+    });
+}
+
+
+function refreshRoutine(dailyRoutineIndex) {
+    // Mark current routine as done
+    const completedRoutine = { ...dailyRoutines[dailyRoutineIndex] };
+    completedRoutine.done = true;
+    completedRoutine.routines.forEach(r => r.done = true);
+
+    // Move completed routine to completedRoutines array
+    completedRoutines.push(completedRoutine);
+
+    // Create a new copy of the current routine
+    const newRoutine = JSON.parse(JSON.stringify(dailyRoutines[dailyRoutineIndex]));
+    newRoutine.done = false;
+    newRoutine.routines.forEach(r => r.done = false);
+
+    // Replace the old routine with the new one
+    dailyRoutines[dailyRoutineIndex] = newRoutine;
+
+    // Update the UI
+    renderDailyRoutines();
+    renderCompletedRoutines();
+
+    // Save the updated state
+    saveRoutineTracker();
+}
+
+function renderCompletedRoutines() {
+    const trackerList = document.getElementById("routine-tracker-list");
+    trackerList.innerHTML = ""; // Clear existing items
+    completedRoutines.forEach(routine => {
+        const listItem = document.createElement("li");
+        listItem.textContent = `${routine.day} - Completed on ${new Date().toLocaleDateString()}`;
+        trackerList.appendChild(listItem);
+    });
+}
+
+function addRoutine(dailyRoutineIndex) {
+    const routineName = prompt("Enter the routine name:");
+    if (routineName) {
+        const routine = {
+            name: routineName,
+            done: false
+        };
+        dailyRoutines[dailyRoutineIndex].routines.push(routine);
+        renderDailyRoutines();
+        saveRoutineTracker();
+    }
+}
+
+function markRoutineDone(dailyRoutineIndex, routineIndex) {
+    dailyRoutines[dailyRoutineIndex].routines[routineIndex].done = !dailyRoutines[dailyRoutineIndex].routines[routineIndex].done;
+    renderDailyRoutines();
+    saveRoutineTracker();
+}
+
+function markDailyRoutineDone(dailyRoutineIndex) {
+    dailyRoutines[dailyRoutineIndex].done = true;
+    dailyRoutines[dailyRoutineIndex].routines.forEach(r => r.done = true);
+    renderDailyRoutines();
+    addRoutineToTracker(dailyRoutines[dailyRoutineIndex]);
+    saveRoutineTracker();
+}
+
+
+function addRoutineToTracker(routine) {
+    const trackerList = document.getElementById("routine-tracker-list");
+    const listItem = document.createElement("li");
+    listItem.textContent = `${routine.day} - Completed on ${new Date().toLocaleDateString()}`;
+    trackerList.appendChild(listItem);
+}
+
+
+
+function saveRoutineTracker() {
+    const dataToSave = {
+        activeRoutines: dailyRoutines,
+        completedRoutines: completedRoutines
+    };
+    localStorage.setItem(routineTrackerKey, JSON.stringify(dataToSave));
+}
+
+function loadRoutineTracker() {
+    const savedRoutineTracker = localStorage.getItem(routineTrackerKey);
+    if (savedRoutineTracker) {
+        const parsedData = JSON.parse(savedRoutineTracker);
+        dailyRoutines = parsedData.activeRoutines || [];
+        completedRoutines = parsedData.completedRoutines || [];
+    } else {
+        dailyRoutines = [];
+        completedRoutines = [];
+    }
+    renderDailyRoutines();
+    renderCompletedRoutines();
+}
+
 
 function showSignInContainer() {
     document.getElementById("signin-container").style.display = "block";
@@ -293,6 +471,7 @@ function markStepDone(taskIndex, stepIndex) {
     tasks[taskIndex].steps[stepIndex].done = true;
     renderTasks();
     updatePopupTable();
+    saveCompletedTasks();
 }
 
 function selectRandomTask() {
