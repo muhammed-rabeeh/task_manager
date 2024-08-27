@@ -91,6 +91,12 @@ function renderDailyRoutines() {
         refreshButton.style.backgroundColor="black";
         refreshButton.onclick = () => refreshRoutine(index);
 
+        // Add remove button
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Remove";
+        removeButton.style.backgroundColor = "#eb9b34";
+        removeButton.onclick = () => removeDailyRoutine(index);
+
         const routinesContainer = document.createElement("div");
         routinesContainer.className = "routines";
 
@@ -117,10 +123,20 @@ function renderDailyRoutines() {
         routineItem.appendChild(addRoutineButton);
         routineItem.appendChild(markDoneButton);
         routineItem.appendChild(refreshButton);
+        routineItem.appendChild(removeButton);
         routineItem.appendChild(routinesContainer);
 
         dailyRoutineList.appendChild(routineItem);
     });
+}
+
+
+function removeDailyRoutine(index) {
+    if (confirm("Are you sure you want to remove this daily routine?")) {
+        dailyRoutines.splice(index, 1);
+        renderDailyRoutines();
+        saveRoutineTracker();
+    }
 }
 
 
